@@ -28,7 +28,7 @@ resource "azurerm_key_vault" "main" {
   enabled_for_deployment          = false
   enabled_for_disk_encryption     = false
   enabled_for_template_deployment = false
-  enable_rbac_authorization       = true
+  rbac_authorization_enabled      = true
   purge_protection_enabled        = local.is_production
   soft_delete_retention_days      = 7
 
@@ -91,7 +91,7 @@ resource "azurerm_cosmosdb_account" "main" {
   kind                = "GlobalDocumentDB"
 
   # Enable free tier if specified (only one per subscription)
-  enable_free_tier = var.cosmos_enable_free_tier
+  free_tier_enabled = var.cosmos_enable_free_tier
 
   consistency_policy {
     consistency_level       = var.cosmos_consistency_level
@@ -114,8 +114,8 @@ resource "azurerm_cosmosdb_account" "main" {
 
   # Continuous backup for data protection
   backup {
-    type                = "Continuous"
-    tier                = "Continuous7Days"
+    type = "Continuous"
+    tier = "Continuous7Days"
   }
 
   tags = local.common_tags
@@ -190,21 +190,21 @@ resource "azurerm_storage_account" "function" {
 }
 
 # -----------------------------------------------------------------------------
-# APP SERVICE PLAN (Consumption for Functions)
+# APP SERVICE PLAN (Consumption Y1 - serverless, pay-per-execution)
 # -----------------------------------------------------------------------------
 
 resource "azurerm_service_plan" "function" {
-  name                = local.resource_names.service_plan
+  name                = "asp-${var.project_name}-${var.environment}"
   location            = azurerm_resource_group.main.location
   resource_group_name = azurerm_resource_group.main.name
   os_type             = "Linux"
-  sku_name            = "Y1" # Consumption plan
+  sku_name            = "Y1" # Consumption plan - serverless, scales to zero
 
   tags = local.common_tags
 }
 
 # -----------------------------------------------------------------------------
-# FUNCTION APP
+# FUNCTION APP (Consumption - serverless)
 # -----------------------------------------------------------------------------
 
 resource "azurerm_linux_function_app" "api" {
@@ -217,7 +217,7 @@ resource "azurerm_linux_function_app" "api" {
 
   https_only = true
 
-  # System-assigned managed identity for secure access to Cosmos DB
+  # System-assigned managed identity for secure access to Cosmos DB and Key Vault
   identity {
     type = "SystemAssigned"
   }
@@ -287,18 +287,9 @@ resource "azurerm_cosmosdb_sql_role_assignment" "function_to_cosmos" {
 resource "azurerm_static_web_app" "main" {
   name                = local.resource_names.static_web_app
   resource_group_name = azurerm_resource_group.main.name
-  location            = var.location
+  location            = var.static_web_app_location # Limited region availability
   sku_tier            = var.static_web_app_sku
   sku_size            = var.static_web_app_sku
 
   tags = local.common_tags
-}
-
-# -----------------------------------------------------------------------------
-# STATIC WEB APP BACKEND LINK TO FUNCTION APP
-# -----------------------------------------------------------------------------
-
-resource "azurerm_static_web_app_function_app_registration" "api" {
-  static_web_app_id = azurerm_static_web_app.main.id
-  function_app_id   = azurerm_linux_function_app.api.id
 }

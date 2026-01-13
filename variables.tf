@@ -3,6 +3,11 @@
 # These variables must be set for each environment
 # -----------------------------------------------------------------------------
 
+variable "subscription_id" {
+  description = "Azure subscription ID"
+  type        = string
+}
+
 variable "environment" {
   description = "Environment name (dev, staging, prod)"
   type        = string
@@ -87,8 +92,8 @@ variable "function_dotnet_version" {
   default     = "8.0"
 
   validation {
-    condition     = contains(["6.0", "7.0", "8.0", "9.0"], var.function_dotnet_version)
-    error_message = "Must be a supported .NET version (6.0, 7.0, 8.0, 9.0)"
+    condition     = contains(["6.0", "7.0", "8.0", "9.0", "10.0"], var.function_dotnet_version)
+    error_message = "Must be a supported .NET version (6.0, 7.0, 8.0, 9.0, 10.0)"
   }
 }
 
@@ -101,6 +106,17 @@ variable "function_always_on" {
 # -----------------------------------------------------------------------------
 # STATIC WEB APP CONFIGURATION
 # -----------------------------------------------------------------------------
+
+variable "static_web_app_location" {
+  description = "Location for Static Web App (limited availability: westus2, centralus, eastus2, westeurope, eastasia)"
+  type        = string
+  default     = "westeurope"
+
+  validation {
+    condition     = contains(["westus2", "centralus", "eastus2", "westeurope", "eastasia"], var.static_web_app_location)
+    error_message = "Static Web Apps are only available in: westus2, centralus, eastus2, westeurope, eastasia"
+  }
+}
 
 variable "static_web_app_sku" {
   description = "SKU tier for Static Web App"
