@@ -246,19 +246,15 @@ resource "azurerm_linux_function_app" "api" {
   }
 
   app_settings = {
-    "FUNCTIONS_WORKER_RUNTIME"  = "dotnet-isolated"
-    "WEBSITE_RUN_FROM_PACKAGE"  = "1"
-    "CosmosDB__AccountEndpoint" = azurerm_cosmosdb_account.main.endpoint
-    "CosmosDB__DatabaseName"    = azurerm_cosmosdb_sql_database.main.name
-    "KeyVault__Uri"             = azurerm_key_vault.main.vault_uri
+    "FUNCTIONS_WORKER_RUNTIME" = "dotnet-isolated"
+    "WEBSITE_RUN_FROM_PACKAGE" = "1"
   }
 
   tags = local.common_tags
 
   lifecycle {
     ignore_changes = [
-      app_settings["WEBSITE_ENABLE_SYNC_UPDATE_SITE"],
-      app_settings["WEBSITE_RUN_FROM_PACKAGE"],
+      app_settings,
       tags["hidden-link: /app-insights-resource-id"],
       tags["hidden-link: /app-insights-instrumentation-key"],
       tags["hidden-link: /app-insights-conn-string"]
