@@ -1,0 +1,34 @@
+# =============================================================================
+# TERRAFORM VARIABLES EXAMPLE
+# Copy this file to terraform.tfvars and fill in your values
+# Do NOT commit terraform.tfvars to source control
+# =============================================================================
+
+# Required variables
+environment = "dev"           # dev, staging, or prod
+location    = "westeurope"    # Azure region
+
+# Optional: Project settings
+project_name   = "dewnews"
+cost_center    = "Engineering"
+repository_url = "https://github.com/your-org/dew-news-infra"
+
+# Optional: Cosmos DB settings
+cosmos_consistency_level = "Session"
+cosmos_enable_serverless = true    # Set to false for provisioned throughput
+cosmos_enable_free_tier  = false   # Only one free tier per subscription
+
+# Optional: Function App settings
+function_dotnet_version = "8.0"
+function_always_on      = false
+
+# Optional: Static Web App settings
+static_web_app_sku = "Free"    # Free or Standard
+
+# Optional: Security settings
+allowed_ip_addresses     = []      # Add your dev IPs here for dev environment
+enable_private_endpoints = false   # Enable for production
+
+# Optional: Monitoring settings
+log_retention_days          = 30
+enable_application_insights = true
