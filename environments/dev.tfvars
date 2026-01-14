@@ -8,7 +8,7 @@ environment = "dev"
 location    = "norwayeast"
 
 # Project settings
-project_name   = "dewnews"
+project_name   = "devnews"
 cost_center    = "Engineering"
 repository_url = ""
 

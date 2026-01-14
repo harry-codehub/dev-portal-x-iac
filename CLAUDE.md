@@ -12,7 +12,7 @@ You are an expert Infrastructure as Code (IaC) engineer specializing in Terrafor
 - **Best Practices**: Follow the Well-Architected Framework principles (reliability, security, cost optimization, operational excellence, performance efficiency)
 - **Code Quality**: Write DRY (Don't Repeat Yourself), maintainable, well-documented infrastructure code
 
-## Project Context: dew-news
+## Project Context: dev-news
 
 This is a serverless news application built on Azure with the following components:
 
@@ -20,7 +20,7 @@ This is a serverless news application built on Azure with the following componen
 ```
 ┌─────────────────┐
 │  Static Web App │ ──── Frontend (React/Vue/etc.)
-│   (dew-news)    │
+│   (dev-news)    │
 └────────┬────────┘
          │
          │ HTTPS/API calls
@@ -99,10 +99,10 @@ This is a serverless news application built on Azure with the following componen
 **Azure Resource Names:**
 - Format: `{type}-{project}-{purpose}-{environment}`
 - Examples:
-  - `cosmos-dewnews-main-dev`
-  - `func-dewnews-api-prod`
-  - `stapp-dewnews-web-dev`
-  - `kv-dewnews-dev`
+  - `cosmos-devnews-main-dev`
+  - `func-devnews-api-prod`
+  - `stapp-devnews-web-dev`
+  - `kv-devnews-dev`
 - Must consider global uniqueness requirements (storage accounts, function apps, key vaults)
 
 ### 3. Variables
@@ -135,9 +135,9 @@ variable "example" {
 terraform {
   backend "azurerm" {
     resource_group_name  = "rg-terraform-state"
-    storage_account_name = "sttfstatedewnews"
+    storage_account_name = "sttfstatedevnews"
     container_name       = "tfstate"
-    key                  = "dewnews.tfstate"
+    key                  = "devnews.tfstate"
   }
 }
 ```
@@ -199,16 +199,16 @@ resource "azurerm_role_assignment" "func_to_keyvault" {
 ```hcl
 locals {
   common_tags = {
-    Project     = "dew-news"
+    Project     = "dev-news"
     ManagedBy   = "Terraform"
     Environment = var.environment
     CostCenter  = "Engineering"
-    Repository  = "github.com/yourorg/dew-news-infra"
+    Repository  = "github.com/yourorg/dev-news-infra"
   }
 }
 
 resource "azurerm_resource_group" "main" {
-  name     = "rg-dewnews-${var.environment}"
+  name     = "rg-devnews-${var.environment}"
   location = var.location
   tags     = local.common_tags
 }
@@ -326,12 +326,12 @@ terraform plan -out=tfplan
 5. Verify outputs
 6. Document any manual steps required
 
-## Common Patterns for dew-news
+## Common Patterns for dev-news
 
 ### Resource Group Structure
 ```hcl
 resource "azurerm_resource_group" "main" {
-  name     = "rg-dewnews-${var.environment}"
+  name     = "rg-devnews-${var.environment}"
   location = var.location
   tags     = local.common_tags
 }
@@ -340,7 +340,7 @@ resource "azurerm_resource_group" "main" {
 ### Function App with Best Practices
 ```hcl
 resource "azurerm_linux_function_app" "api" {
-  name                       = "func-dewnews-api-${var.environment}"
+  name                       = "func-devnews-api-${var.environment}"
   resource_group_name        = azurerm_resource_group.main.name
   location                   = azurerm_resource_group.main.location
   storage_account_name       = azurerm_storage_account.func_storage.name
@@ -388,7 +388,7 @@ resource "azurerm_linux_function_app" "api" {
 ### Key Vault with Best Practices
 ```hcl
 resource "azurerm_key_vault" "main" {
-  name                = "kv-dewnews-${var.environment}"
+  name                = "kv-devnews-${var.environment}"
   location            = azurerm_resource_group.main.location
   resource_group_name = azurerm_resource_group.main.name
   tenant_id           = data.azurerm_client_config.current.tenant_id
@@ -421,7 +421,7 @@ resource "azurerm_role_assignment" "function_to_keyvault" {
 ### Cosmos DB with Best Practices
 ```hcl
 resource "azurerm_cosmosdb_account" "main" {
-  name                = "cosmos-dewnews-${var.environment}"
+  name                = "cosmos-devnews-${var.environment}"
   location            = azurerm_resource_group.main.location
   resource_group_name = azurerm_resource_group.main.name
   offer_type          = "Standard"
@@ -456,7 +456,7 @@ resource "azurerm_cosmosdb_account" "main" {
 }
 
 resource "azurerm_cosmosdb_sql_database" "main" {
-  name                = "dew-news-db"
+  name                = "dev-news-db"
   resource_group_name = azurerm_resource_group.main.name
   account_name        = azurerm_cosmosdb_account.main.name
 }

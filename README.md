@@ -1,13 +1,13 @@
-# Dew-News Infrastructure
+# Dev-News Infrastructure
 
-Terraform infrastructure for the Dew-News serverless application on Azure.
+Terraform infrastructure for the Dev-News serverless application on Azure.
 
 ## Architecture
 
 ```
 ┌─────────────────┐
 │  Static Web App │ ──── Frontend (React/Vue/etc.)
-│   (dew-news)    │
+│   (dev-news)    │
 └────────┬────────┘
          │
          │ HTTPS/API calls
@@ -91,13 +91,13 @@ terraform apply -var-file="environments/prod.tfvars"
 
 | Resource | Dev | Prod |
 |----------|-----|------|
-| Resource Group | `rg-dewnews-dev` | `rg-dewnews-prod` |
-| Cosmos DB | `cosmos-dewnews-dev` (serverless) | `cosmos-dewnews-prod` (provisioned) |
-| Function App | `func-dewnews-api-dev` | `func-dewnews-api-prod` |
-| Static Web App | `stapp-dewnews-dev` (Free) | `stapp-dewnews-prod` (Standard) |
-| Key Vault | `kv-dewnews-dev` | `kv-dewnews-prod` |
-| App Insights | `appi-dewnews-dev` | `appi-dewnews-prod` |
-| Storage Account | `stdewnewsfuncdev` | `stdewnewsfuncprod` |
+| Resource Group | `rg-devnews-dev` | `rg-devnews-prod` |
+| Cosmos DB | `cosmos-devnews-dev` (serverless) | `cosmos-devnews-prod` (provisioned) |
+| Function App | `func-devnews-api-dev` | `func-devnews-api-prod` |
+| Static Web App | `stapp-devnews-dev` (Free) | `stapp-devnews-prod` (Standard) |
+| Key Vault | `kv-devnews-dev` | `kv-devnews-prod` |
+| App Insights | `appi-devnews-dev` | `appi-devnews-prod` |
+| Storage Account | `stdevnewsfuncdev` | `stdevnewsfuncprod` |
 
 ## Configuration
 
@@ -115,7 +115,7 @@ cp terraform.tfvars.example terraform.tfvars
 |----------|-------------|---------|
 | `environment` | Environment name (dev, staging, prod) | Required |
 | `location` | Azure region | Required |
-| `project_name` | Project name for resource naming | `dewnews` |
+| `project_name` | Project name for resource naming | `devnews` |
 | `cosmos_enable_serverless` | Use serverless Cosmos DB | `true` |
 | `function_dotnet_version` | .NET version | `8.0` |
 | `static_web_app_sku` | Static Web App tier | `Free` |
@@ -180,7 +180,7 @@ terraform destroy -var-file="environments/dev.tfvars"
 
 # Import existing resource
 terraform import -var-file="environments/dev.tfvars" \
-  azurerm_resource_group.main /subscriptions/.../resourceGroups/rg-dewnews-dev
+  azurerm_resource_group.main /subscriptions/.../resourceGroups/rg-devnews-dev
 ```
 
 ## Remote State (Recommended for Teams)
@@ -191,9 +191,9 @@ Uncomment and configure the backend in `versions.tf`:
 terraform {
   backend "azurerm" {
     resource_group_name  = "rg-terraform-state"
-    storage_account_name = "sttfstatedewnews"
+    storage_account_name = "sttfstatedevnews"
     container_name       = "tfstate"
-    key                  = "dewnews-dev.tfstate"  # Use different key per env
+    key                  = "devnews-dev.tfstate"  # Use different key per env
   }
 }
 ```
@@ -206,7 +206,7 @@ az group create --name rg-terraform-state --location norwayeast
 
 # Create storage account
 az storage account create \
-  --name sttfstatedewnews \
+  --name sttfstatedevnews \
   --resource-group rg-terraform-state \
   --sku Standard_LRS \
   --encryption-services blob
@@ -214,7 +214,7 @@ az storage account create \
 # Create container
 az storage container create \
   --name tfstate \
-  --account-name sttfstatedewnews
+  --account-name sttfstatedevnews
 ```
 
 ## Connecting Your Application
@@ -224,9 +224,9 @@ az storage container create \
 The Function App receives these app settings automatically:
 
 ```
-CosmosDB__AccountEndpoint = https://cosmos-dewnews-{env}.documents.azure.com:443/
-CosmosDB__DatabaseName    = dew-news-db
-KeyVault__Uri             = https://kv-dewnews-{env}.vault.azure.net/
+CosmosDB__AccountEndpoint = https://cosmos-devnews-{env}.documents.azure.com:443/
+CosmosDB__DatabaseName    = dev-news-db
+KeyVault__Uri             = https://kv-devnews-{env}.vault.azure.net/
 ```
 
 ### .NET Code Example
@@ -254,7 +254,7 @@ var secretClient = new SecretClient(
 
 1. **"Key Vault soft-deleted"**: A Key Vault with the same name was recently deleted
    ```bash
-   az keyvault purge --name kv-dewnews-dev --location norwayeast
+   az keyvault purge --name kv-devnews-dev --location norwayeast
    ```
 
 2. **"Cosmos DB name taken"**: Cosmos DB names are globally unique
@@ -269,10 +269,10 @@ var secretClient = new SecretClient(
 az account show
 
 # List resource groups
-az group list --query "[?contains(name,'dewnews')]" -o table
+az group list --query "[?contains(name,'devnews')]" -o table
 
 # Check Function App logs
-az webapp log tail --name func-dewnews-api-dev --resource-group rg-dewnews-dev
+az webapp log tail --name func-devnews-api-dev --resource-group rg-devnews-dev
 ```
 
 ## License

@@ -11,8 +11,8 @@ terraform {
   # Uncomment and configure for remote state (recommended for team use)
   # backend "azurerm" {
   #   resource_group_name  = "rg-terraform-state"
-  #   storage_account_name = "sttfstatedewnews"
+  #   storage_account_name = "sttfstatedevnews"
   #   container_name       = "tfstate"
-  #   key                  = "dewnews.tfstate"
+  #   key                  = "devnews.tfstate"
   # }
 }

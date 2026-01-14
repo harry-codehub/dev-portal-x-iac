@@ -6,7 +6,7 @@
 locals {
   # Common tags applied to all resources
   common_tags = {
-    Project     = "dew-news"
+    Project     = "dev-news"
     Environment = var.environment
     ManagedBy   = "Terraform"
     CostCenter  = var.cost_center
@@ -17,7 +17,7 @@ locals {
   resource_names = {
     resource_group   = "rg-${var.project_name}-${var.environment}"
     cosmos_account   = "cosmos-${var.project_name}-${var.environment}"
-    cosmos_database  = "dew-news-db"
+    cosmos_database  = "dev-news-db"
     function_app     = "func-${var.project_name}-api-${var.environment}"
     function_storage = "st${var.project_name}func${var.environment}"
     static_web_app   = "stapp-${var.project_name}-${var.environment}"
@@ -31,9 +31,9 @@ locals {
 
   # Cosmos DB containers configuration
   cosmos_containers = {
-    articles = {
-      name               = "articles"
-      partition_key_path = "/source"
+    news_items = {
+      name               = "news-items"
+      partition_key_path = "/Key"
       unique_keys        = []
     }
   }

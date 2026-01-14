@@ -35,7 +35,7 @@ variable "location" {
 variable "project_name" {
   description = "Project name used in resource naming"
   type        = string
-  default     = "dewnews"
+  default     = "devnews"
 
   validation {
     condition     = can(regex("^[a-z][a-z0-9]{2,10}$", var.project_name))

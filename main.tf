@@ -1,5 +1,5 @@
 # =============================================================================
-# DEW-NEWS INFRASTRUCTURE
+# DEV-NEWS INFRASTRUCTURE
 # Azure serverless architecture: Static Web App + Function App + Cosmos DB
 # =============================================================================
 
