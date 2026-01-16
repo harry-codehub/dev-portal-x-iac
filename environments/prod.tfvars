@@ -12,22 +12,22 @@ project_name   = "devnews"
 cost_center    = "Engineering"
 repository_url = ""
 
-# Cosmos DB - production configuration
+# Cosmos DB - optimized for development (cost-effective)
 cosmos_consistency_level = "Session"
-cosmos_enable_serverless = false # Consider provisioned throughput for predictable costs
-cosmos_enable_free_tier  = false # Free tier not recommended for production
+cosmos_enable_serverless = true  # Serverless = pay only for what you use
+cosmos_enable_free_tier  = false # Set to true if not used elsewhere
 
 # Function App
-function_dotnet_version = "8.0"
+function_dotnet_version = "9.0"
 function_always_on      = false # Not applicable for Consumption plan
 
-# Static Web App - Standard for production features
-static_web_app_sku = "Standard"
+# Static Web App - Free tier for development
+static_web_app_sku = "Free"
 
-# Security - strict for production
-allowed_ip_addresses     = []   # Empty = no IP restrictions (use private endpoints instead)
-enable_private_endpoints = true # Enable for enhanced security
+# Security - relaxed for development
+allowed_ip_addresses     = []    # Add developer IPs if needed
+enable_private_endpoints = false # No private endpoints for dev
 
-# Monitoring - extended retention for production
-log_retention_days          = 90 # Longer retention for production troubleshooting
+# Monitoring
+log_retention_days          = 30 # Minimum retention for dev
 enable_application_insights = true
