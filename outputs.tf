@@ -54,17 +54,17 @@ output "cosmos_db_connection_string" {
 
 output "function_app_name" {
   description = "Name of the Function App"
-  value       = azurerm_linux_function_app.api.name
+  value       = azurerm_function_app_flex_consumption.api.name
 }
 
 output "function_app_url" {
   description = "Default URL of the Function App"
-  value       = "https://${azurerm_linux_function_app.api.default_hostname}"
+  value       = "https://${azurerm_function_app_flex_consumption.api.default_hostname}"
 }
 
 output "function_app_principal_id" {
   description = "Principal ID of the Function App managed identity"
-  value       = azurerm_linux_function_app.api.identity[0].principal_id
+  value       = azurerm_function_app_flex_consumption.api.identity[0].principal_id
 }
 
 # -----------------------------------------------------------------------------
@@ -141,7 +141,7 @@ output "deployment_info" {
     environment        = var.environment
     location           = var.location
     static_web_app_url = "https://${azurerm_static_web_app.main.default_host_name}"
-    function_app_url   = "https://${azurerm_linux_function_app.api.default_hostname}"
+    function_app_url   = "https://${azurerm_function_app_flex_consumption.api.default_hostname}"
     cosmos_endpoint    = azurerm_cosmosdb_account.main.endpoint
     key_vault_uri      = azurerm_key_vault.main.vault_uri
   }

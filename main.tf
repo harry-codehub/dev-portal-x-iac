@@ -44,7 +44,38 @@ resource "azurerm_key_vault" "main" {
 resource "azurerm_role_assignment" "function_to_keyvault" {
   scope                = azurerm_key_vault.main.id
   role_definition_name = "Key Vault Secrets User"
-  principal_id         = azurerm_linux_function_app.api.identity[0].principal_id
+  principal_id         = azurerm_function_app_flex_consumption.api.identity[0].principal_id
+}
+
+# Key Vault secrets (created once, never modified by Terraform)
+resource "azurerm_key_vault_secret" "anthropic_api_key" {
+  name         = "AnthropicApiKey"
+  value        = ""
+  key_vault_id = azurerm_key_vault.main.id
+
+  lifecycle {
+    ignore_changes = all
+  }
+}
+
+resource "azurerm_key_vault_secret" "cosmos_endpoint" {
+  name         = "CosmosDbEndpoint"
+  value        = ""
+  key_vault_id = azurerm_key_vault.main.id
+
+  lifecycle {
+    ignore_changes = all
+  }
+}
+
+resource "azurerm_key_vault_secret" "cosmos_key" {
+  name         = "CosmosDbKey"
+  value        = ""
+  key_vault_id = azurerm_key_vault.main.id
+
+  lifecycle {
+    ignore_changes = all
+  }
 }
 
 # -----------------------------------------------------------------------------
@@ -157,10 +188,10 @@ resource "azurerm_cosmosdb_sql_container" "containers" {
     included_path {
       path = "/*"
     }
+  }
 
-    excluded_path {
-      path = "/\"_etag\"/?"
-    }
+  lifecycle {
+    ignore_changes = [indexing_policy]
   }
 }
 
@@ -189,8 +220,15 @@ resource "azurerm_storage_account" "function" {
   tags = local.common_tags
 }
 
+# Storage container for Function App deployments (required for Flex Consumption)
+resource "azurerm_storage_container" "deployments" {
+  name                  = "deployments"
+  storage_account_id    = azurerm_storage_account.function.id
+  container_access_type = "private"
+}
+
 # -----------------------------------------------------------------------------
-# APP SERVICE PLAN (Consumption Y1 - serverless, pay-per-execution)
+# APP SERVICE PLAN (Flex Consumption - serverless)
 # -----------------------------------------------------------------------------
 
 resource "azurerm_service_plan" "function" {
@@ -198,24 +236,28 @@ resource "azurerm_service_plan" "function" {
   location            = azurerm_resource_group.main.location
   resource_group_name = azurerm_resource_group.main.name
   os_type             = "Linux"
-  sku_name            = "Y1" # Consumption plan - serverless, scales to zero
+  sku_name            = "FC1" # Flex Consumption plan
 
   tags = local.common_tags
 }
 
 # -----------------------------------------------------------------------------
-# FUNCTION APP (Consumption - serverless)
+# FUNCTION APP (Flex Consumption - serverless)
 # -----------------------------------------------------------------------------
 
-resource "azurerm_linux_function_app" "api" {
-  name                       = local.resource_names.function_app
-  location                   = azurerm_resource_group.main.location
-  resource_group_name        = azurerm_resource_group.main.name
-  service_plan_id            = azurerm_service_plan.function.id
-  storage_account_name       = azurerm_storage_account.function.name
-  storage_account_access_key = azurerm_storage_account.function.primary_access_key
+resource "azurerm_function_app_flex_consumption" "api" {
+  name                = local.resource_names.function_app
+  location            = azurerm_resource_group.main.location
+  resource_group_name = azurerm_resource_group.main.name
+  service_plan_id     = azurerm_service_plan.function.id
 
-  https_only = true
+  storage_container_type      = "blobContainer"
+  storage_container_endpoint  = "${azurerm_storage_account.function.primary_blob_endpoint}${azurerm_storage_container.deployments.name}"
+  storage_authentication_type = "StorageAccountConnectionString"
+  storage_access_key          = azurerm_storage_account.function.primary_access_key
+
+  runtime_name    = "dotnet-isolated"
+  runtime_version = var.function_dotnet_version
 
   # System-assigned managed identity for secure access to Cosmos DB and Key Vault
   identity {
@@ -223,42 +265,23 @@ resource "azurerm_linux_function_app" "api" {
   }
 
   site_config {
-    application_stack {
-      dotnet_version              = var.function_dotnet_version
-      use_dotnet_isolated_runtime = true
-    }
-
-    # CORS configuration - allow Static Web App
     cors {
       allowed_origins = [
         "https://${azurerm_static_web_app.main.default_host_name}"
       ]
-      support_credentials = true
     }
-
-    # Application Insights connection
-    application_insights_connection_string = var.enable_application_insights ? azurerm_application_insights.main[0].connection_string : null
-    application_insights_key               = var.enable_application_insights ? azurerm_application_insights.main[0].instrumentation_key : null
-
-    # Security settings
-    ftps_state          = "Disabled"
-    minimum_tls_version = "1.2"
   }
 
   app_settings = {
-    "FUNCTIONS_WORKER_RUNTIME" = "dotnet-isolated"
-    "WEBSITE_RUN_FROM_PACKAGE" = "1"
+    "AnthropicApiKey" = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.anthropic_api_key.versionless_id})"
+    "CosmosDbEndpoint" = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.cosmos_endpoint.versionless_id})"
+    "CosmosDbKey"      = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.cosmos_key.versionless_id})"
   }
 
   tags = local.common_tags
 
   lifecycle {
-    ignore_changes = [
-      app_settings,
-      tags["hidden-link: /app-insights-resource-id"],
-      tags["hidden-link: /app-insights-instrumentation-key"],
-      tags["hidden-link: /app-insights-conn-string"]
-    ]
+    ignore_changes = all
   }
 }
 
@@ -272,7 +295,7 @@ resource "azurerm_cosmosdb_sql_role_assignment" "function_to_cosmos" {
   account_name        = azurerm_cosmosdb_account.main.name
   # Built-in "Cosmos DB Built-in Data Contributor" role
   role_definition_id = "${azurerm_cosmosdb_account.main.id}/sqlRoleDefinitions/00000000-0000-0000-0000-000000000002"
-  principal_id       = azurerm_linux_function_app.api.identity[0].principal_id
+  principal_id       = azurerm_function_app_flex_consumption.api.identity[0].principal_id
   scope              = azurerm_cosmosdb_account.main.id
 }
 
@@ -288,4 +311,11 @@ resource "azurerm_static_web_app" "main" {
   sku_size            = var.static_web_app_sku
 
   tags = local.common_tags
+
+  lifecycle {
+    ignore_changes = [
+      repository_url,
+      repository_branch
+    ]
+  }
 }
