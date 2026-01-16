@@ -47,35 +47,11 @@ resource "azurerm_role_assignment" "function_to_keyvault" {
   principal_id         = azurerm_function_app_flex_consumption.api.identity[0].principal_id
 }
 
-# Key Vault secrets (created once, never modified by Terraform)
-resource "azurerm_key_vault_secret" "anthropic_api_key" {
-  name         = "AnthropicApiKey"
-  value        = ""
-  key_vault_id = azurerm_key_vault.main.id
-
-  lifecycle {
-    ignore_changes = all
-  }
-}
-
-resource "azurerm_key_vault_secret" "cosmos_endpoint" {
-  name         = "CosmosDbEndpoint"
-  value        = ""
-  key_vault_id = azurerm_key_vault.main.id
-
-  lifecycle {
-    ignore_changes = all
-  }
-}
-
-resource "azurerm_key_vault_secret" "cosmos_key" {
-  name         = "CosmosDbKey"
-  value        = ""
-  key_vault_id = azurerm_key_vault.main.id
-
-  lifecycle {
-    ignore_changes = all
-  }
+# Grant Function App access to Storage for deployments
+resource "azurerm_role_assignment" "function_to_storage" {
+  scope                = azurerm_storage_account.function.id
+  role_definition_name = "Storage Blob Data Owner"
+  principal_id         = azurerm_function_app_flex_consumption.api.identity[0].principal_id
 }
 
 # -----------------------------------------------------------------------------
@@ -272,11 +248,8 @@ resource "azurerm_function_app_flex_consumption" "api" {
     }
   }
 
-  app_settings = {
-    "AnthropicApiKey" = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.anthropic_api_key.versionless_id})"
-    "CosmosDbEndpoint" = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.cosmos_endpoint.versionless_id})"
-    "CosmosDbKey"      = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.cosmos_key.versionless_id})"
-  }
+  # App settings managed manually in Azure Portal
+  app_settings = {}
 
   tags = local.common_tags
 

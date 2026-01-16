@@ -14,7 +14,7 @@ Terraform infrastructure for the Dev-News serverless application on Azure.
          │
 ┌────────▼────────┐
 │  Function App   │ ──── Backend API (.NET 9)
-│ (Consumption)   │
+│ (Flex Consump.) │
 └───┬─────────┬───┘
     │         │
     │ Managed │ Managed
@@ -36,20 +36,24 @@ Terraform infrastructure for the Dev-News serverless application on Azure.
 
 ### 1. Authenticate with Azure
 
-```bash
+```powershell
 az login
-az account set --subscription "Your Subscription Name"
+$env:TF_VAR_subscription_id = "your-subscription-id"
 ```
 
 ### 2. Initialize Terraform
 
-```bash
+```powershell
 terraform init
 ```
 
 ### 3. Deploy Development Environment
 
-```bash
+```powershell
+# Create dev workspace
+terraform workspace new dev
+terraform workspace select dev
+
 # Preview changes
 terraform plan -var-file="environments/dev.tfvars"
 
@@ -59,16 +63,40 @@ terraform apply -var-file="environments/dev.tfvars"
 
 ### 4. Deploy Production Environment
 
-For production, use a separate state file or workspace:
-
-```bash
-# Option A: Using workspaces
+```powershell
+# Create prod workspace (separate state from dev)
 terraform workspace new prod
-terraform apply -var-file="environments/prod.tfvars"
+terraform workspace select prod
 
-# Option B: Using separate state (recommended)
-# Configure backend in versions.tf with different key per environment
+# Deploy prod
+terraform apply -var-file="environments/prod.tfvars"
 ```
+
+## Managing Multiple Environments
+
+**IMPORTANT:** Each environment needs its own workspace to avoid destroying one when deploying another.
+
+### Switching Between Environments
+
+```powershell
+# List workspaces
+terraform workspace list
+
+# Switch to dev
+terraform workspace select dev
+terraform plan -var-file="environments/dev.tfvars"
+
+# Switch to prod
+terraform workspace select prod
+terraform plan -var-file="environments/prod.tfvars"
+```
+
+### Always Match Workspace to tfvars
+
+| Workspace | Var File |
+|-----------|----------|
+| `dev` | `environments/dev.tfvars` |
+| `prod` | `environments/prod.tfvars` |
 
 ## Project Structure
 
@@ -92,39 +120,49 @@ terraform apply -var-file="environments/prod.tfvars"
 | Resource | Dev | Prod |
 |----------|-----|------|
 | Resource Group | `rg-devnews-dev` | `rg-devnews-prod` |
-| Cosmos DB | `cosmos-devnews-dev` (serverless) | `cosmos-devnews-prod` (provisioned) |
+| Cosmos DB | `cosmos-devnews-dev` | `cosmos-devnews-prod` |
 | Function App | `func-devnews-api-dev` | `func-devnews-api-prod` |
-| Static Web App | `stapp-devnews-dev` (Free) | `stapp-devnews-prod` (Standard) |
+| Static Web App | `stapp-devnews-dev` | `stapp-devnews-prod` |
 | Key Vault | `kv-devnews-dev` | `kv-devnews-prod` |
 | App Insights | `appi-devnews-dev` | `appi-devnews-prod` |
 | Storage Account | `stdevnewsfuncdev` | `stdevnewsfuncprod` |
 
 ## Configuration
 
-### Environment Variables
+### Subscription ID
 
-Copy `terraform.tfvars.example` to customize:
+Pass via environment variable (don't commit to tfvars):
 
-```bash
-cp terraform.tfvars.example terraform.tfvars
+```powershell
+$env:TF_VAR_subscription_id = "your-subscription-id"
 ```
 
 ### Key Variables
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `environment` | Environment name (dev, staging, prod) | Required |
-| `location` | Azure region | Required |
+| `environment` | Environment name (dev, prod) | Required |
+| `location` | Azure region | `norwayeast` |
 | `project_name` | Project name for resource naming | `devnews` |
 | `cosmos_enable_serverless` | Use serverless Cosmos DB | `true` |
-| `function_dotnet_version` | .NET version | `8.0` |
+| `function_dotnet_version` | .NET version | `9.0` |
 | `static_web_app_sku` | Static Web App tier | `Free` |
+
+## Manual Configuration (Not Managed by Terraform)
+
+These are set up once and ignored by Terraform:
+
+- **Key Vault Secrets**: Create manually in Azure Portal
+  - `AnthropicApiKey`
+  - `CosmosDbEndpoint`
+  - `CosmosDbKey`
+- **Function App Settings**: Configure in Azure Portal or via az cli
+- **Function App CORS**: Configure in Azure Portal
+- **Static Web App Repository**: Link via Azure Portal or GitHub Actions
 
 ## Outputs
 
-After deployment, Terraform outputs important values:
-
-```bash
+```powershell
 # View all outputs
 terraform output
 
@@ -132,40 +170,18 @@ terraform output
 terraform output function_app_url
 terraform output static_web_app_url
 terraform output cosmos_db_endpoint
-
-# Get sensitive outputs
-terraform output -raw static_web_app_api_key
 ```
-
-### Key Outputs
-
-- `static_web_app_url` - Frontend URL
-- `function_app_url` - API endpoint
-- `cosmos_db_endpoint` - Database endpoint
-- `key_vault_uri` - Key Vault URI
-- `static_web_app_api_key` - Deployment token (sensitive)
 
 ## Security Features
 
 - **Managed Identities**: Function App uses system-assigned identity
-- **No Connection Strings**: Cosmos DB and Key Vault accessed via RBAC
-- **RBAC Authorization**: Key Vault uses Azure RBAC (no access policies)
+- **RBAC Authorization**: Key Vault and Storage use Azure RBAC
 - **TLS 1.2**: Enforced on all resources
-- **Purge Protection**: Enabled on Key Vault in production
-
-## Environment Differences
-
-| Setting | Dev | Prod |
-|---------|-----|------|
-| Cosmos DB Mode | Serverless | Provisioned |
-| Static Web App | Free tier | Standard tier |
-| Key Vault Purge Protection | Disabled | Enabled |
-| Log Retention | 30 days | 90 days |
-| Storage Replication | LRS | GRS |
+- **Flex Consumption**: Serverless Function App with automatic scaling
 
 ## Common Commands
 
-```bash
+```powershell
 # Format code
 terraform fmt -recursive
 
@@ -175,104 +191,75 @@ terraform validate
 # Show current state
 terraform show
 
-# Destroy infrastructure
+# List all resources in state
+terraform state list
+
+# Destroy environment (be careful!)
+terraform workspace select dev
 terraform destroy -var-file="environments/dev.tfvars"
-
-# Import existing resource
-terraform import -var-file="environments/dev.tfvars" \
-  azurerm_resource_group.main /subscriptions/.../resourceGroups/rg-devnews-dev
 ```
 
-## Remote State (Recommended for Teams)
+## Importing Existing Resources
 
-Uncomment and configure the backend in `versions.tf`:
+If resources already exist in Azure, import them:
 
-```hcl
-terraform {
-  backend "azurerm" {
-    resource_group_name  = "rg-terraform-state"
-    storage_account_name = "sttfstatedevnews"
-    container_name       = "tfstate"
-    key                  = "devnews-dev.tfstate"  # Use different key per env
-  }
-}
-```
+```powershell
+$sub = "your-subscription-id"
 
-Create the storage account first:
+# Resource Group
+terraform import -var-file="environments/dev.tfvars" azurerm_resource_group.main "/subscriptions/$sub/resourceGroups/rg-devnews-dev"
 
-```bash
-# Create resource group for state
-az group create --name rg-terraform-state --location norwayeast
+# Function App
+terraform import -var-file="environments/dev.tfvars" azurerm_function_app_flex_consumption.api "/subscriptions/$sub/resourceGroups/rg-devnews-dev/providers/Microsoft.Web/sites/func-devnews-api-dev"
 
-# Create storage account
-az storage account create \
-  --name sttfstatedevnews \
-  --resource-group rg-terraform-state \
-  --sku Standard_LRS \
-  --encryption-services blob
+# Cosmos DB
+terraform import -var-file="environments/dev.tfvars" azurerm_cosmosdb_account.main "/subscriptions/$sub/resourceGroups/rg-devnews-dev/providers/Microsoft.DocumentDB/databaseAccounts/cosmos-devnews-dev"
 
-# Create container
-az storage container create \
-  --name tfstate \
-  --account-name sttfstatedevnews
-```
+# Key Vault
+terraform import -var-file="environments/dev.tfvars" azurerm_key_vault.main "/subscriptions/$sub/resourceGroups/rg-devnews-dev/providers/Microsoft.KeyVault/vaults/kv-devnews-dev"
 
-## Connecting Your Application
+# Static Web App
+terraform import -var-file="environments/dev.tfvars" azurerm_static_web_app.main "/subscriptions/$sub/resourceGroups/rg-devnews-dev/providers/Microsoft.Web/staticSites/stapp-devnews-dev"
 
-### Function App Configuration
-
-The Function App receives these app settings automatically:
-
-```
-CosmosDB__AccountEndpoint = https://cosmos-devnews-{env}.documents.azure.com:443/
-CosmosDB__DatabaseName    = dev-news-db
-KeyVault__Uri             = https://kv-devnews-{env}.vault.azure.net/
-```
-
-### .NET Code Example
-
-```csharp
-// Use DefaultAzureCredential for managed identity
-var credential = new DefaultAzureCredential();
-
-// Cosmos DB
-var cosmosClient = new CosmosClient(
-    Environment.GetEnvironmentVariable("CosmosDB__AccountEndpoint"),
-    credential
-);
-
-// Key Vault
-var secretClient = new SecretClient(
-    new Uri(Environment.GetEnvironmentVariable("KeyVault__Uri")),
-    credential
-);
+# Storage Account
+terraform import -var-file="environments/dev.tfvars" azurerm_storage_account.function "/subscriptions/$sub/resourceGroups/rg-devnews-dev/providers/Microsoft.Storage/storageAccounts/stdevnewsfuncdev"
 ```
 
 ## Troubleshooting
 
-### Common Issues
+### "Key Vault soft-deleted"
 
-1. **"Key Vault soft-deleted"**: A Key Vault with the same name was recently deleted
-   ```bash
-   az keyvault purge --name kv-devnews-dev --location norwayeast
-   ```
+```powershell
+az keyvault purge --name kv-devnews-dev --location norwayeast
+```
 
-2. **"Cosmos DB name taken"**: Cosmos DB names are globally unique
-   - Change `project_name` variable to something unique
+### "Cosmos DB name taken"
 
-3. **"Insufficient permissions"**: Ensure your Azure account has Owner or Contributor role
+Cosmos DB names are globally unique. Change `project_name` variable.
 
-### Useful Commands
+### "Insufficient permissions"
 
-```bash
-# Check Azure login
-az account show
+Ensure your Azure account has Owner or Contributor role on the subscription.
 
-# List resource groups
-az group list --query "[?contains(name,'devnews')]" -o table
+### Workspace Issues
 
-# Check Function App logs
-az webapp log tail --name func-devnews-api-dev --resource-group rg-devnews-dev
+```powershell
+# Check current workspace
+terraform workspace show
+
+# Make sure workspace matches your tfvars file!
+terraform workspace select dev  # for dev.tfvars
+terraform workspace select prod # for prod.tfvars
+```
+
+### Storage Authentication Error on Deploy
+
+Grant the Function App access to storage:
+
+```powershell
+$principalId = az functionapp identity show --name func-devnews-api-dev --resource-group rg-devnews-dev --query principalId -o tsv
+
+az role assignment create --assignee $principalId --role "Storage Blob Data Owner" --scope "/subscriptions/$sub/resourceGroups/rg-devnews-dev/providers/Microsoft.Storage/storageAccounts/stdevnewsfuncdev"
 ```
 
 ## License
