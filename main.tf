@@ -203,6 +203,19 @@ resource "azurerm_storage_container" "deployments" {
   container_access_type = "private"
 }
 
+# Storage containers for generated video assets
+resource "azurerm_storage_container" "videos" {
+  name                  = "videos"
+  storage_account_id    = azurerm_storage_account.function.id
+  container_access_type = "blob" # Public read for video serving
+}
+
+resource "azurerm_storage_container" "thumbnails" {
+  name                  = "thumbnails"
+  storage_account_id    = azurerm_storage_account.function.id
+  container_access_type = "blob" # Public read for thumbnail serving
+}
+
 # -----------------------------------------------------------------------------
 # APP SERVICE PLAN (Flex Consumption - serverless)
 # -----------------------------------------------------------------------------

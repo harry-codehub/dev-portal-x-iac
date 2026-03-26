@@ -36,5 +36,10 @@ locals {
       partition_key_path = "/Key"
       unique_keys        = []
     }
+    short_videos = {
+      name               = "short-videos"
+      partition_key_path = "/Key"
+      unique_keys        = []
+    }
   }
 }
