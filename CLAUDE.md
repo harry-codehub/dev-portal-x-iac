@@ -29,16 +29,16 @@ environments/     # Per-environment tfvars (dev.tfvars, prod.tfvars)
 
 ## Environment Management
 
-- One Terraform **workspace** per environment — always match workspace to tfvars file
-- `terraform workspace select dev` + `-var-file="environments/dev.tfvars"`
-- `terraform workspace select prod` + `-var-file="environments/prod.tfvars"`
+- Environments are differentiated purely through `-var-file` (no Terraform workspaces)
+- `terraform plan -var-file="environments/dev.tfvars"`
+- `terraform plan -var-file="environments/prod.tfvars"`
 
 ## Key Conventions
 
-- **Naming**: `{type}-{project}-{purpose}-{env}` (e.g., `func-devnews-api-dev`)
+- **Naming**: `{type}-{project}-{env}` for most resources, `{type}-{project}-{purpose}-{env}` for function app (e.g., `func-devnews-api-dev`)
 - **Storage accounts**: No hyphens (e.g., `stdevnewsfuncdev`)
-- **Tags**: All resources get `Project`, `Environment`, `ManagedBy=Terraform`, `CostCenter`
-- **Security**: Managed identities for Function→CosmosDB and Function→KeyVault (RBAC, no connection strings)
+- **Tags**: All resources get `Project`, `Environment`, `ManagedBy=Terraform`, `CostCenter`, `Repository`
+- **Security**: Managed identities for Function→CosmosDB, Function→KeyVault, and Function→Storage (RBAC, no connection strings)
 - **Function App lifecycle**: `ignore_changes = all` — app settings managed in Azure Portal
 - **Cosmos containers**: Defined in `locals.tf` via `cosmos_containers` map, created with `for_each`
 - **Production guards**: Purge protection on Key Vault, GRS storage replication
