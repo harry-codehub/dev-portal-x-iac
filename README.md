@@ -72,21 +72,6 @@ Environments are differentiated through `-var-file` — no Terraform workspaces 
 terraform plan -var-file="environments/prod.tfvars"
 ```
 
-## Project Structure
-
-```
-├── main.tf                    # All resource definitions
-├── variables.tf               # Input variables with validation
-├── outputs.tf                 # Output values
-├── providers.tf               # Azure provider configuration
-├── versions.tf                # Terraform/provider version constraints
-├── locals.tf                  # Local values, naming conventions, tags
-├── terraform.tfvars.example   # Example variable values
-└── environments/
-    ├── dev.tfvars             # Development configuration
-    └── prod.tfvars            # Production configuration
-```
-
 ## Key Variables
 
 | Variable | Description | Default |
