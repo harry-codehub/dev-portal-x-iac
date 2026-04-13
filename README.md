@@ -35,6 +35,7 @@ Terraform infrastructure-as-code for the DevNews serverless application on Azure
 | Application Insights | `appi-devnews-dev` | `appi-devnews-prod` |
 | Storage Account | `stdevnewsfuncdev` | `stdevnewsfuncprod` |
 | Log Analytics Workspace | `log-devnews-dev` | `log-devnews-prod` |
+| App Service Plan | `asp-devnews-dev` | `asp-devnews-prod` |
 
 ## Prerequisites
 
@@ -52,27 +53,22 @@ export TF_VAR_subscription_id="your-subscription-id"
 # 2. Initialize
 terraform init
 
-# 3. Select workspace (one per environment)
-terraform workspace new dev    # First time only
-terraform workspace select dev
-
-# 4. Plan and apply
+# 3. Plan and apply
 terraform plan -var-file="environments/dev.tfvars"
 terraform apply -var-file="environments/dev.tfvars"
 ```
 
 ## Environment Management
 
-Each environment uses a separate Terraform workspace. **Always match workspace to tfvars file.**
+Environments are differentiated through `-var-file` — no Terraform workspaces are used.
 
-| Workspace | Var File |
+| Environment | Var File |
 |---|---|
 | `dev` | `environments/dev.tfvars` |
 | `prod` | `environments/prod.tfvars` |
 
 ```bash
-# Switch environments
-terraform workspace select prod
+# Plan for a specific environment
 terraform plan -var-file="environments/prod.tfvars"
 ```
 
@@ -100,13 +96,13 @@ terraform plan -var-file="environments/prod.tfvars"
 | `location` | Azure region | Required |
 | `project_name` | Resource naming prefix | `devnews` |
 | `cosmos_enable_serverless` | Serverless Cosmos DB | `true` |
-| `function_dotnet_version` | .NET version | `8.0` |
+| `function_dotnet_version` | .NET version | `8.0` (overridden to `9.0` in both envs) |
 | `static_web_app_sku` | Free or Standard | `Free` |
 | `enable_application_insights` | Enable monitoring | `true` |
 
 ## Security
 
-- **Managed identities**: Function App uses system-assigned identity for Cosmos DB and Key Vault access
+- **Managed identities**: Function App uses system-assigned identity for Cosmos DB, Key Vault, and Storage access
 - **RBAC**: Key Vault uses Azure RBAC authorization (no access policies)
 - **TLS 1.2**: Enforced on storage
 - **Purge protection**: Enabled on Key Vault in production
@@ -128,7 +124,6 @@ terraform state list           # List managed resources
 terraform show                 # Show current state
 
 # Destroy (careful!)
-terraform workspace select dev
 terraform destroy -var-file="environments/dev.tfvars"
 ```
 
@@ -139,4 +134,3 @@ terraform destroy -var-file="environments/dev.tfvars"
 | Key Vault soft-deleted | `az keyvault purge --name kv-devnews-dev --location norwayeast` |
 | Cosmos DB name taken | Change `project_name` variable (globally unique) |
 | Insufficient permissions | Need Owner/Contributor role on subscription |
-| Wrong workspace | `terraform workspace show` — must match your tfvars file |
