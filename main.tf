@@ -255,20 +255,16 @@ resource "azurerm_function_app_flex_consumption" "api" {
 
   site_config {
     cors {
-      allowed_origins = [
-        "https://${azurerm_static_web_app.main.default_host_name}"
-      ]
+      allowed_origins = compact([
+        "https://${azurerm_static_web_app.main.default_host_name}",
+        var.custom_domain != "" ? "https://${var.custom_domain}" : ""
+      ])
     }
   }
 
-  # App settings managed manually in Azure Portal
-  app_settings = {}
+  app_settings = local.function_app_settings
 
   tags = local.common_tags
-
-  lifecycle {
-    ignore_changes = all
-  }
 }
 
 # -----------------------------------------------------------------------------

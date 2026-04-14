@@ -18,7 +18,7 @@ cosmos_enable_serverless = true  # Serverless = pay only for what you use
 cosmos_enable_free_tier  = false # Set to true if not used elsewhere
 
 # Function App
-function_dotnet_version = "9.0"
+function_dotnet_version = "10.0"
 function_always_on      = false # Not applicable for Consumption plan
 
 # Static Web App - Free tier for development
