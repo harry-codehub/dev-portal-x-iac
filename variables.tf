@@ -97,6 +97,18 @@ variable "function_dotnet_version" {
   }
 }
 
+variable "function_tts_voice_name" {
+  description = "Azure TTS voice name for video generation"
+  type        = string
+  default     = "en-US-AndrewMultilingualNeural"
+}
+
+variable "daily_pipeline_schedule" {
+  description = "CRON expression for the daily news crawl pipeline (empty = disabled)"
+  type        = string
+  default     = ""
+}
+
 variable "function_always_on" {
   description = "Keep Function App always on (not applicable for Consumption plan)"
   type        = bool
@@ -106,6 +118,12 @@ variable "function_always_on" {
 # -----------------------------------------------------------------------------
 # STATIC WEB APP CONFIGURATION
 # -----------------------------------------------------------------------------
+
+variable "custom_domain" {
+  description = "Custom domain for the frontend (added to CORS allowed origins)"
+  type        = string
+  default     = ""
+}
 
 variable "static_web_app_location" {
   description = "Location for Static Web App (limited availability: westus2, centralus, eastus2, westeurope, eastasia)"

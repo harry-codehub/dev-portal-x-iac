@@ -1,0 +1,97 @@
+name: PR Plan
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths-ignore:
+      - '**/*.md'
+      - '.gitignore'
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+
+jobs:
+  plan-dev:
+    uses: ./.github/workflows/terraform.yml
+    with:
+      environment: dev
+    secrets: inherit
+
+  plan-prod:
+    uses: ./.github/workflows/terraform.yml
+    with:
+      environment: prod
+    secrets: inherit
+
+  comment:
+    name: Post Plan to PR
+    runs-on: ubuntu-latest
+    needs: [plan-dev, plan-prod]
+    if: always()
+
+    permissions:
+      pull-requests: write
+
+    steps:
+      - name: Post plan comment
+        uses: actions/github-script@v7
+        env:
+          DEV_PLAN: ${{ needs.plan-dev.outputs.plan-output }}
+          PROD_PLAN: ${{ needs.plan-prod.outputs.plan-output }}
+          DEV_EXIT: ${{ needs.plan-dev.outputs.plan-exitcode }}
+          PROD_EXIT: ${{ needs.plan-prod.outputs.plan-exitcode }}
+        with:
+          script: |
+            const devPlan = process.env.DEV_PLAN;
+            const prodPlan = process.env.PROD_PLAN;
+            const devExit = process.env.DEV_EXIT;
+            const prodExit = process.env.PROD_EXIT;
+
+            const statusIcon = (code) => code === '0' ? ':white_check_mark: No changes' : code === '2' ? ':warning: Changes detected' : ':x: Error';
+
+            const body = `## Terraform Plan Results
+
+            <details>
+            <summary><strong>Dev</strong> — ${statusIcon(devExit)}</summary>
+
+            \`\`\`
+            ${devPlan}
+            \`\`\`
+            </details>
+
+            <details>
+            <summary><strong>Prod</strong> — ${statusIcon(prodExit)}</summary>
+
+            \`\`\`
+            ${prodPlan}
+            \`\`\`
+            </details>
+
+            <!-- terraform-plan-comment -->`;
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const existing = comments.find(c => c.body.includes('<!-- terraform-plan-comment -->'));
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }

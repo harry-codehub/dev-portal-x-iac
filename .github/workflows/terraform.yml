@@ -1,0 +1,79 @@
+name: Terraform Plan/Apply
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+        description: 'Environment name (dev or prod)'
+      apply:
+        required: false
+        type: boolean
+        default: false
+        description: 'Whether to apply the plan'
+    outputs:
+      plan-exitcode:
+        description: 'Terraform plan exit code (0=no changes, 2=changes)'
+        value: ${{ jobs.terraform.outputs.plan-exitcode }}
+      plan-output:
+        description: 'Terraform plan summary'
+        value: ${{ jobs.terraform.outputs.plan-output }}
+
+jobs:
+  terraform:
+    name: Terraform (${{ inputs.environment }})
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment == 'prod' && 'production' || 'development' }}
+
+    permissions:
+      id-token: write
+      contents: read
+
+    env:
+      ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      ARM_USE_OIDC: true
+
+    outputs:
+      plan-exitcode: ${{ steps.plan.outputs.exitcode }}
+      plan-output: ${{ steps.plan.outputs.stdout }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+
+      - name: Terraform Init
+        run: terraform init -backend-config="key=devnews-${{ inputs.environment }}.tfstate"
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        id: plan
+        run: |
+          terraform plan \
+            -var-file="environments/${{ inputs.environment }}.tfvars" \
+            -var="subscription_id=${{ secrets.AZURE_SUBSCRIPTION_ID }}" \
+            -out=tfplan \
+            -detailed-exitcode \
+            -no-color
+        continue-on-error: true
+
+      - name: Terraform Apply
+        if: inputs.apply && steps.plan.outputs.exitcode == '2'
+        run: terraform apply -no-color tfplan

@@ -1,0 +1,16 @@
+name: Deploy Prod
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  terraform:
+    uses: ./.github/workflows/terraform.yml
+    with:
+      environment: prod
+      apply: true
+    secrets: inherit

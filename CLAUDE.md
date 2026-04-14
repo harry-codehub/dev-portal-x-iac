@@ -1,6 +1,6 @@
 # DevNews Infrastructure
 
-Terraform IaC for the DevNews AI developer news aggregator on Azure. Provisions: Resource Group, Cosmos DB (serverless), Function App (Flex Consumption, .NET 9), Static Web App, Key Vault, Application Insights, Log Analytics, Storage Account.
+Terraform IaC for the DevNews AI developer news aggregator on Azure. Provisions: Resource Group, Cosmos DB (serverless), Function App (Flex Consumption, .NET 10), Static Web App, Key Vault, Application Insights, Log Analytics, Storage Account.
 
 ## Commands
 
@@ -39,7 +39,10 @@ environments/     # Per-environment tfvars (dev.tfvars, prod.tfvars)
 - **Storage accounts**: No hyphens (e.g., `stdevnewsfuncdev`)
 - **Tags**: All resources get `Project`, `Environment`, `ManagedBy=Terraform`, `CostCenter`, `Repository`
 - **Security**: Managed identities for Function→CosmosDB, Function→KeyVault, and Function→Storage (RBAC, no connection strings)
-- **Function App lifecycle**: `ignore_changes = all` — app settings managed in Azure Portal
+- **Function App settings**: Fully managed by Terraform — secrets via `@Microsoft.KeyVault` references, non-secrets from Terraform outputs/variables
 - **Cosmos containers**: Defined in `locals.tf` via `cosmos_containers` map, created with `for_each`
 - **Production guards**: Purge protection on Key Vault, GRS storage replication
 - **Application Insights**: Conditionally created via `enable_application_insights` variable
+- **CI/CD**: GitHub Actions with OIDC auth, deploy dev on push to main, prod via manual workflow_dispatch
+- **Remote state**: Azure Storage backend (`sttfstatedevnews`), separate state files per environment via `-backend-config="key=devnews-{env}.tfstate"`
+- **Production deploy**: Requires `production` GitHub environment with required reviewers

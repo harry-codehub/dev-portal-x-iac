@@ -29,6 +29,31 @@ locals {
   # Environment-specific configurations
   is_production = var.environment == "prod"
 
+  # Key Vault reference helper
+  kv_ref = "https://${local.resource_names.key_vault}.vault.azure.net/secrets"
+
+  # Function App settings — secrets via Key Vault references, non-secrets from Terraform
+  function_app_settings = {
+    # Non-secret values from Terraform
+    "CosmosDbEndpoint"                      = azurerm_cosmosdb_account.main.endpoint
+    "APPLICATIONINSIGHTS_CONNECTION_STRING" = var.enable_application_insights ? azurerm_application_insights.main[0].connection_string : ""
+
+    # Key Vault references
+    "CosmosDbKey"                            = "@Microsoft.KeyVault(SecretUri=${local.kv_ref}/CosmosDbKey)"
+    "AzureStorageConnectionString"           = "@Microsoft.KeyVault(SecretUri=${local.kv_ref}/AzureStorageConnectionString)"
+    "AnthropicApiKey"                        = "@Microsoft.KeyVault(SecretUri=${local.kv_ref}/AnthropicApiKey)"
+    "CreatomateApiKey"                       = "@Microsoft.KeyVault(SecretUri=${local.kv_ref}/CreatomateApiKey)"
+    "YouTubeClientId"                        = "@Microsoft.KeyVault(SecretUri=${local.kv_ref}/YouTubeClientId)"
+    "YouTubeClientSecret"                    = "@Microsoft.KeyVault(SecretUri=${local.kv_ref}/YouTubeClientSecret)"
+    "YouTubeRefreshToken"                    = "@Microsoft.KeyVault(SecretUri=${local.kv_ref}/YouTubeRefreshToken)"
+    "LinkedInAccessToken"                    = "@Microsoft.KeyVault(SecretUri=${local.kv_ref}/LinkedInAccessToken)"
+    "VideoGeneration:LinkedInOrganizationId" = "@Microsoft.KeyVault(SecretUri=${local.kv_ref}/VideoGenerationLinkedInOrganizationId)"
+
+    # Plain configuration values
+    "VideoGeneration:TtsVoiceName" = var.function_tts_voice_name
+    "DailyPipelineSchedule"        = var.daily_pipeline_schedule != "" ? var.daily_pipeline_schedule : null
+  }
+
   # Cosmos DB containers configuration
   cosmos_containers = {
     news_items = {

@@ -18,11 +18,17 @@ cosmos_enable_serverless = true  # Serverless = pay only for what you use
 cosmos_enable_free_tier  = false # Set to true if not used elsewhere
 
 # Function App
-function_dotnet_version = "9.0"
+function_dotnet_version = "10.0"
 function_always_on      = false # Not applicable for Consumption plan
 
 # Static Web App - Free tier for development
 static_web_app_sku = "Free"
+
+# Custom domain (only prod)
+custom_domain = "dev-news.dev"
+
+# Daily crawl pipeline schedule (CRON, disabled in dev)
+daily_pipeline_schedule = "0 0 6 * * *"
 
 # Security - relaxed for development
 allowed_ip_addresses     = []    # Add developer IPs if needed
