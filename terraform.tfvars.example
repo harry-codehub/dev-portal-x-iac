@@ -19,8 +19,9 @@ cosmos_enable_serverless = true    # Set to false for provisioned throughput
 cosmos_enable_free_tier  = false   # Only one free tier per subscription
 
 # Optional: Function App settings
-function_dotnet_version = "8.0"
-function_always_on      = false
+function_dotnet_version         = "8.0"
+function_always_on              = false
+function_maximum_instance_count = 40       # Flex Consumption scale-out cap (40-1000)
 
 # Optional: Static Web App settings
 static_web_app_sku = "Free"    # Free or Standard
@@ -32,3 +33,8 @@ enable_private_endpoints = false   # Enable for production
 # Optional: Monitoring settings
 log_retention_days          = 30
 enable_application_insights = true
+
+# Optional: Cost management — budget alert (leave emails empty to disable)
+monthly_budget_amount = 50
+budget_alert_emails   = ["you@example.com"]
+budget_start_date     = "2026-06-01T00:00:00Z"  # First of a month, within last 12 months

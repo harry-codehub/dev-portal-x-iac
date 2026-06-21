@@ -115,6 +115,17 @@ variable "function_always_on" {
   default     = false
 }
 
+variable "function_maximum_instance_count" {
+  description = "Maximum scale-out instances for the Function App (Flex Consumption). Caps worst-case compute cost."
+  type        = number
+  default     = 40
+
+  validation {
+    condition     = var.function_maximum_instance_count >= 40 && var.function_maximum_instance_count <= 1000
+    error_message = "Flex Consumption maximum_instance_count must be between 40 and 1000."
+  }
+}
+
 # -----------------------------------------------------------------------------
 # STATIC WEB APP CONFIGURATION
 # -----------------------------------------------------------------------------
@@ -182,4 +193,26 @@ variable "enable_application_insights" {
   description = "Enable Application Insights for monitoring"
   type        = bool
   default     = true
+}
+
+# -----------------------------------------------------------------------------
+# COST MANAGEMENT
+# -----------------------------------------------------------------------------
+
+variable "monthly_budget_amount" {
+  description = "Monthly cost budget for the resource group, in the subscription's billing currency. Alerts only; does not cap spend."
+  type        = number
+  default     = 50
+}
+
+variable "budget_alert_emails" {
+  description = "Email addresses notified on budget thresholds. Empty list disables the budget resource."
+  type        = list(string)
+  default     = []
+}
+
+variable "budget_start_date" {
+  description = "Budget start date (first day of a month, RFC3339). Must be within the last 12 months."
+  type        = string
+  default     = "2026-06-01T00:00:00Z"
 }

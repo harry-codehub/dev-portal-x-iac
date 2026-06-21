@@ -24,7 +24,7 @@ terraform output
 ## Architecture & key patterns
 
 - Flat root module — no submodules. Files: `main.tf` (all resources), `variables.tf` (with validation), `outputs.tf`, `locals.tf` (naming, tags, `function_app_settings`, `cosmos_containers`), `providers.tf`, `versions.tf`; `environments/*.tfvars`; `scripts/bootstrap-state.sh`; `.github/workflows/`.
-- Resources: Resource Group, Key Vault (RBAC auth), Cosmos DB (account + database `dev-news-db` + containers `news-items`, `short-videos`), Function App (Flex Consumption `FC1`, `dotnet-isolated`), Static Web App, Application Insights + Log Analytics (conditional on `enable_application_insights`), Storage (containers `deployments`, `videos`, `thumbnails`).
+- Resources: Resource Group, Key Vault (RBAC auth), Cosmos DB (account + database `dev-news-db` + containers `news-items`, `short-videos`), Function App (Flex Consumption `FC1`, `dotnet-isolated`, scale-out capped by `function_maximum_instance_count`), Static Web App, Application Insights + Log Analytics (conditional on `enable_application_insights`), Storage (containers `deployments`, `videos`, `thumbnails`), and a resource-group monthly budget alert (created only when `budget_alert_emails` is non-empty).
 - Auth: Function App system-assigned managed identity → Cosmos (Built-in Data Contributor), Key Vault (Secrets User), Storage (Blob Data Owner). No connection-string secrets in code.
 - Function App settings fully Terraform-managed: non-secrets inline, secrets as `@Microsoft.KeyVault(SecretUri=...)` references. Secret *values* are created out-of-band, not by Terraform.
 

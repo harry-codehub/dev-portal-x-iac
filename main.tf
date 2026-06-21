@@ -248,6 +248,9 @@ resource "azurerm_function_app_flex_consumption" "api" {
   runtime_name    = "dotnet-isolated"
   runtime_version = var.function_dotnet_version
 
+  # Cap scale-out to bound worst-case compute cost (denial-of-wallet protection)
+  maximum_instance_count = var.function_maximum_instance_count
+
   # System-assigned managed identity for secure access to Cosmos DB and Key Vault
   identity {
     type = "SystemAssigned"
@@ -299,5 +302,42 @@ resource "azurerm_static_web_app" "main" {
       repository_url,
       repository_branch
     ]
+  }
+}
+
+# -----------------------------------------------------------------------------
+# COST MANAGEMENT
+# Monthly budget alert on the resource group. Notifies on actual + forecasted
+# spend; created only when alert emails are provided. This alerts, it does not
+# cap spend — the Function App scale-out cap above bounds the worst case.
+# -----------------------------------------------------------------------------
+
+resource "azurerm_consumption_budget_resource_group" "main" {
+  count = length(var.budget_alert_emails) > 0 ? 1 : 0
+
+  name              = "budget-${var.project_name}-${var.environment}"
+  resource_group_id = azurerm_resource_group.main.id
+
+  amount     = var.monthly_budget_amount
+  time_grain = "Monthly"
+
+  time_period {
+    start_date = var.budget_start_date
+  }
+
+  notification {
+    enabled        = true
+    threshold      = 80
+    operator       = "GreaterThan"
+    threshold_type = "Actual"
+    contact_emails = var.budget_alert_emails
+  }
+
+  notification {
+    enabled        = true
+    threshold      = 100
+    operator       = "GreaterThan"
+    threshold_type = "Forecasted"
+    contact_emails = var.budget_alert_emails
   }
 }
