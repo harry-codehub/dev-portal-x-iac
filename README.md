@@ -1,121 +1,46 @@
 # DevNews Infrastructure
 
-Terraform infrastructure-as-code for the DevNews serverless application on Azure.
+> Terraform infrastructure-as-code that provisions the Azure serverless platform for DevNews.
 
-## Architecture
+This repo provisions everything DevNews runs on in Azure: a Function App (Flex Consumption) for the backend API, Cosmos DB for data, a Static Web App for the frontend, plus Key Vault, Application Insights, Log Analytics, and Storage. Environments (dev/prod) are separated by var-files, state is kept in a remote Azure backend, and all deploys authenticate via OIDC.
 
-```
-┌─────────────────┐
-│  Static Web App │ ──── Frontend (Next.js static export)
-│   (dev-news)    │
-└────────┬────────┘
-         │ HTTPS/API calls
-┌────────▼────────┐
-│  Function App   │ ──── Backend API (.NET 9 isolated)
-│ (Flex Consump.) │
-└───┬─────────┬───┘
-    │         │
-    │ Managed │ Managed Identity
-    │ Identity│
-┌───▼───┐ ┌───▼───────┐
-│Key    │ │ Cosmos DB │ ──── Data Storage
-│Vault  │ │ (SQL API) │
-└───────┘ └───────────┘
-```
+Part of the **DevNews** product, alongside the backend API ([`dev-news`](https://github.com/Steinklo/dev-news)) and web frontend ([`dev-news-frontend`](https://github.com/Steinklo/dev-news-frontend)).
 
-## Resources Created
-
-| Resource | Dev Example | Prod Example |
-|---|---|---|
-| Resource Group | `rg-devnews-dev` | `rg-devnews-prod` |
-| Cosmos DB Account | `cosmos-devnews-dev` | `cosmos-devnews-prod` |
-| Function App (Flex Consumption) | `func-devnews-api-dev` | `func-devnews-api-prod` |
-| Static Web App | `stapp-devnews-dev` | `stapp-devnews-prod` |
-| Key Vault | `kv-devnews-dev` | `kv-devnews-prod` |
-| Application Insights | `appi-devnews-dev` | `appi-devnews-prod` |
-| Storage Account | `stdevnewsfuncdev` | `stdevnewsfuncprod` |
-| Log Analytics Workspace | `log-devnews-dev` | `log-devnews-prod` |
-| App Service Plan | `asp-devnews-dev` | `asp-devnews-prod` |
-
-## Prerequisites
-
-- [Terraform](https://www.terraform.io/downloads) >= 1.5.0
-- [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli)
-- Azure subscription with Owner/Contributor role
-
-## Quick Start
+## Quick start
 
 ```bash
-# 1. Authenticate
 az login
-export TF_VAR_subscription_id="your-subscription-id"
+export TF_VAR_subscription_id="<your-subscription-id>"
 
-# 2. Initialize
-terraform init
-
-# 3. Plan and apply
+terraform init -backend-config="key=devnews-dev.tfstate"
 terraform plan -var-file="environments/dev.tfvars"
-terraform apply -var-file="environments/dev.tfvars"
 ```
 
-## Environment Management
+`plan` prints the resource diff; `No changes` means infrastructure matches state. **Apply is normally done by CI** (see Contributing). First-time setup of the remote state backend is a one-off: `./scripts/bootstrap-state.sh --subscription-id <id>`.
 
-Environments are differentiated through `-var-file` — no Terraform workspaces are used.
+## Prerequisites & configuration
 
-| Environment | Var File |
+| Requirement | Value |
 |---|---|
-| `dev` | `environments/dev.tfvars` |
-| `prod` | `environments/prod.tfvars` |
+| [Terraform](https://developer.hashicorp.com/terraform/downloads) | >= 1.5.0 |
+| azurerm provider | ~> 4.14 (lockfile pins 4.57.0) |
+| [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli) | `az login` |
+| Subscription role | Owner / Contributor |
 
-```bash
-# Plan for a specific environment
-terraform plan -var-file="environments/prod.tfvars"
-```
+Environments are differentiated purely by `-var-file="environments/<env>.tfvars"` — no Terraform workspaces. `subscription_id` is supplied via `TF_VAR_subscription_id` (or OIDC in CI), never committed. See `terraform.tfvars.example` for the full variable list.
 
-## Key Variables
+**Secrets:** never commit real values. `*.tfvars` (except `terraform.tfvars.example` and `environments/*.tfvars`) and all `*.tfstate` are gitignored. Function App settings are fully Terraform-managed; secret *values* (e.g. `AnthropicApiKey`, `CosmosDbKey`) must exist in Key Vault out-of-band and are referenced via `@Microsoft.KeyVault(...)`.
 
-| Variable | Description | Default |
-|---|---|---|
-| `subscription_id` | Azure subscription ID | Required (env var) |
-| `environment` | `dev`, `staging`, or `prod` | Required |
-| `location` | Azure region | Required |
-| `project_name` | Resource naming prefix | `devnews` |
-| `cosmos_enable_serverless` | Serverless Cosmos DB | `true` |
-| `function_dotnet_version` | .NET version | `8.0` (overridden to `9.0` in both envs) |
-| `static_web_app_sku` | Free or Standard | `Free` |
-| `enable_application_insights` | Enable monitoring | `true` |
+## Links
 
-## Security
+- Backend — [`dev-news`](https://github.com/Steinklo/dev-news)
+- Frontend — [`dev-news-frontend`](https://github.com/Steinklo/dev-news-frontend)
+- Remote state — Azure Storage `sttfstatedevnews`, container `tfstate`, RG `rg-terraform-state`; one state file per env (`devnews-<env>.tfstate`)
 
-- **Managed identities**: Function App uses system-assigned identity for Cosmos DB, Key Vault, and Storage access
-- **RBAC**: Key Vault uses Azure RBAC authorization (no access policies)
-- **TLS 1.2**: Enforced on storage
-- **Purge protection**: Enabled on Key Vault in production
-- **Cosmos DB role assignment**: Built-in Data Contributor role via managed identity
+## Contributing
 
-## Manual Configuration (Not Managed by Terraform)
+Open a PR against `main`; CI runs `fmt`, `validate`, and `plan` for both dev and prod and posts the plan to the PR. Merging to `main` auto-applies **dev**; **prod** is applied via the manual `Deploy Prod` workflow, gated by the `production` GitHub environment.
 
-- **Key Vault Secrets**: `AnthropicApiKey`, `CosmosDbEndpoint`, `CosmosDbKey`
-- **Function App Settings**: Configured in Azure Portal
-- **Static Web App Repository**: Linked via Azure Portal or GitHub Actions
+## License
 
-## Common Commands
-
-```bash
-terraform fmt -recursive       # Format
-terraform validate             # Validate
-terraform output               # Show all outputs
-terraform state list           # List managed resources
-terraform show                 # Show current state
-
-# Destroy (careful!)
-terraform destroy -var-file="environments/dev.tfvars"
-```
-
-## Troubleshooting
-
-| Issue | Solution |
-|---|---|
-| Key Vault soft-deleted | `az keyvault purge --name kv-devnews-dev --location norwayeast` |
-| Cosmos DB name taken | Change `project_name` variable (globally unique) |
-| Insufficient permissions | Need Owner/Contributor role on subscription |
+No license has been declared — all rights reserved by the author.
