@@ -43,4 +43,4 @@ Open a PR against `main`; CI runs `fmt`, `validate`, and `plan` for both dev and
 
 ## License
 
-No license has been declared — all rights reserved by the author.
+Released under the [MIT License](LICENSE).
