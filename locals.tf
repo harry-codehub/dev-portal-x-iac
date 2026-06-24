@@ -66,5 +66,10 @@ locals {
       partition_key_path = "/Key"
       unique_keys        = []
     }
+    social_posts = {
+      name               = "text-posts"
+      partition_key_path = "/Key"
+      unique_keys        = []
+    }
   }
 }

@@ -31,6 +31,16 @@ Environments are differentiated purely by `-var-file="environments/<env>.tfvars"
 
 **Secrets:** never commit real values. `*.tfvars` (except `terraform.tfvars.example` and `environments/*.tfvars`) and all `*.tfstate` are gitignored. Function App settings are fully Terraform-managed; secret *values* (e.g. `AnthropicApiKey`, `CosmosDbKey`) must exist in Key Vault out-of-band and are referenced via `@Microsoft.KeyVault(...)`.
 
+## Cosmos DB containers
+
+The Cosmos SQL database `dev-news-db` holds three containers, all partitioned on `/Key` and defined in the `cosmos_containers` map in `locals.tf` (created via `for_each`):
+
+| Container | Purpose |
+|---|---|
+| `news-items` | Curated, AI-scored news articles |
+| `short-videos` | Daily video metadata |
+| `text-posts` | Generated LinkedIn social posts |
+
 ## Links
 
 - Backend — [`dev-news`](https://github.com/Steinklo/dev-news)
