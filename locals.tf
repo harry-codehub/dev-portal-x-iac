@@ -48,6 +48,8 @@ locals {
     "YouTubeRefreshToken"                    = "@Microsoft.KeyVault(SecretUri=${local.kv_ref}/YouTubeRefreshToken)"
     "LinkedInAccessToken"                    = "@Microsoft.KeyVault(SecretUri=${local.kv_ref}/LinkedInAccessToken)"
     "VideoGeneration:LinkedInOrganizationId" = "@Microsoft.KeyVault(SecretUri=${local.kv_ref}/VideoGenerationLinkedInOrganizationId)"
+    "BlueskyHandle"                          = "@Microsoft.KeyVault(SecretUri=${local.kv_ref}/BlueskyHandle)"
+    "BlueskyAppPassword"                     = "@Microsoft.KeyVault(SecretUri=${local.kv_ref}/BlueskyAppPassword)"
 
     # Plain configuration values
     "VideoGeneration:TtsVoiceName" = var.function_tts_voice_name
