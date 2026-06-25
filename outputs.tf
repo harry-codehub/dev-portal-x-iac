@@ -131,6 +131,16 @@ output "application_insights_instrumentation_key" {
   sensitive   = true
 }
 
+output "dashboard_id" {
+  description = "Resource ID of the service-health portal dashboard"
+  value       = var.enable_application_insights ? azurerm_portal_dashboard.main[0].id : null
+}
+
+output "dashboard_url" {
+  description = "Azure portal URL of the service-health dashboard"
+  value       = var.enable_application_insights ? "https://portal.azure.com/#@/dashboard/arm${azurerm_portal_dashboard.main[0].id}" : null
+}
+
 # -----------------------------------------------------------------------------
 # DEPLOYMENT HELPER OUTPUTS
 # -----------------------------------------------------------------------------
