@@ -162,10 +162,17 @@
                     "metrics": [
                       {
                         "resourceMetadata": { "id": "${function_app_id}" },
-                        "name": "FunctionExecutionCount",
+                        "name": "OnDemandFunctionExecutionCount",
                         "aggregationType": 1,
                         "namespace": "microsoft.web/sites",
-                        "metricVisualization": { "displayName": "Function execution count" }
+                        "metricVisualization": { "displayName": "On-demand executions" }
+                      },
+                      {
+                        "resourceMetadata": { "id": "${function_app_id}" },
+                        "name": "AlwaysReadyFunctionExecutionCount",
+                        "aggregationType": 1,
+                        "namespace": "microsoft.web/sites",
+                        "metricVisualization": { "displayName": "Always-ready executions" }
                       }
                     ],
                     "title": "Function execution count",
@@ -195,10 +202,17 @@
                     "metrics": [
                       {
                         "resourceMetadata": { "id": "${function_app_id}" },
-                        "name": "FunctionExecutionUnits",
+                        "name": "OnDemandFunctionExecutionUnits",
                         "aggregationType": 1,
                         "namespace": "microsoft.web/sites",
-                        "metricVisualization": { "displayName": "Function execution units" }
+                        "metricVisualization": { "displayName": "On-demand units" }
+                      },
+                      {
+                        "resourceMetadata": { "id": "${function_app_id}" },
+                        "name": "AlwaysReadyFunctionExecutionUnits",
+                        "aggregationType": 1,
+                        "namespace": "microsoft.web/sites",
+                        "metricVisualization": { "displayName": "Always-ready units" }
                       }
                     ],
                     "title": "Function execution units (GB-s proxy)",
