@@ -98,9 +98,9 @@ variable "function_dotnet_version" {
 }
 
 variable "function_tts_voice_name" {
-  description = "Azure TTS voice name for video generation"
+  description = "OpenAI TTS voice id for video generation (Creatomate provider; e.g. onyx, alloy, nova)"
   type        = string
-  default     = "en-US-AndrewMultilingualNeural"
+  default     = "onyx"
 }
 
 variable "daily_pipeline_schedule" {
