@@ -46,4 +46,4 @@ terraform output
 
 ## Further context
 
-- `README.md` — onboarding and quick start. Siblings: [`dev-news`](https://github.com/Steinklo/dev-news), [`dev-news-frontend`](https://github.com/Steinklo/dev-news-frontend).
+- `README.md` — onboarding and quick start. Siblings: [`dev-news`](https://github.com/harry-codehub/dev-portal-x), [`dev-news-frontend`](https://github.com/harry-codehub/dev-portal-x-frontend).

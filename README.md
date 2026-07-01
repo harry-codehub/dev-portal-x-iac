@@ -4,7 +4,7 @@
 
 This repo provisions everything DevNews runs on in Azure: a Function App (Flex Consumption) for the backend API, Cosmos DB for data, a Static Web App for the frontend, plus Key Vault, Application Insights, Log Analytics, and Storage. Environments (dev/prod) are separated by var-files, state is kept in a remote Azure backend, and all deploys authenticate via OIDC.
 
-Part of the **DevNews** product, alongside the backend API ([`dev-news`](https://github.com/Steinklo/dev-news)) and web frontend ([`dev-news-frontend`](https://github.com/Steinklo/dev-news-frontend)).
+Part of the **DevNews** product, alongside the backend API ([`dev-news`](https://github.com/harry-codehub/dev-portal-x)) and web frontend ([`dev-news-frontend`](https://github.com/harry-codehub/dev-portal-x-frontend)).
 
 ## Quick start
 
@@ -43,8 +43,8 @@ The Cosmos SQL database `dev-news-db` holds three containers, all partitioned on
 
 ## Links
 
-- Backend — [`dev-news`](https://github.com/Steinklo/dev-news)
-- Frontend — [`dev-news-frontend`](https://github.com/Steinklo/dev-news-frontend)
+- Backend — [`dev-news`](https://github.com/harry-codehub/dev-portal-x)
+- Frontend — [`dev-news-frontend`](https://github.com/harry-codehub/dev-portal-x-frontend)
 - Remote state — Azure Storage `sttfstatedevnews`, container `tfstate`, RG `rg-terraform-state`; one state file per env (`devnews-<env>.tfstate`)
 
 ## Contributing
